@@ -19,7 +19,14 @@ spl_autoload_register(function($classname){
 });
 
 dd(PDO::getAvailableDrivers());
-// $db = new MyQueryBuilder($config);
+
+$db = new MyQueryBuilder($config);
+
+$db
+    ->select(['*'])
+    ->from('cards')
+    
+
 
 // $db->select(['user_id', 'title'])->from('cards')->orderBy('user_id');
 // $db->insertInto('users', ['username' => 'Sam', 'email' => 'sam@mail.ru']);

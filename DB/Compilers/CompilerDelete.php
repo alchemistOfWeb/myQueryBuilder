@@ -14,7 +14,9 @@ class CompilerDelete extends Compiler
 
         $where = $this->compileWheres($builder->wheres);
 
-        $sql = "DELETE {$from} {$joins} {$where}";
+        $limit = $this->compileLimit($builder->limit);
+
+        $sql = "DELETE {$from}{$joins}{$where}{$limit}";
 
         return $sql;
     }

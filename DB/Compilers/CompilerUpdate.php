@@ -10,11 +10,13 @@ class CompilerUpdate extends Compiler
     {
         $table = $builder->table;
 
-        $columns = implode( ', ', array_map(function($val) {return $val . '=?';}, $builder->columns) );
+        $columns = implode( ', ', array_map(function($val) {return $val . ' = ?';}, $builder->columns) );
 
         $where = $this->compileWheres($builder->wheres);
 
-        $sql = "UPDATE {$table} SET {$columns} {$where}";
+        $limit = $this->compileLimit($builder->limit);
+
+        $sql = "UPDATE {$table} SET {$columns}{$where}{$limit}";
 
         return $sql;
     }

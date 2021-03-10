@@ -14,7 +14,9 @@ class CompilerInsert extends Compiler
 
         $columns = implode(', ', $builder->columns);
 
-        $sql = "INSERT INTO {$table}({$columns}) VALUES({$values})";
+        $limit = $this->compileLimit($builder->limit);
+
+        $sql = "INSERT INTO {$table}({$columns}) VALUES({$values}){$limit}";
 
         return $sql;
     }

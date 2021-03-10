@@ -7,13 +7,17 @@ return [
 
     'DB_PORT'       => 3306, 
 
-    'DB_NAME'   => 'testdb',
-
+    // 'DB_NAME'   => 'testdb',
+    'DB_NAME'   => 'checklist_service',
+    
     'DB_USER'   => 'nikita',
 
     'DB_PASSWORD'   => 'nikita',
     
     'DB_CHARSET'    => 'utf8',
+
+    // fill if you use SQLite db
+    'PATH_TO_SQLITE_FILE' => ''
 ];
 
 

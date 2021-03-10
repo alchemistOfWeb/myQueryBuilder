@@ -14,11 +14,11 @@ use Exception;
 /**
  * 
  * @method MyQueryBuilder where(string $first, string $operator, string|int $second)
- * @method MyQueryBuilder where(callable $subwhere)
+ * @method MyQueryBuilder where(Closure $subwhere)
  * @method MyQueryBuilder where(array ...$condition_list)
  * 
- * @method MyQueryBuilder orWhere(string $first, string $operator, string|int $second)
- * @method MyQueryBuilder orWhere(callable $subwhere)
+ * method MyQueryBuilder orWhere(string $first, string $operator, string|int $second)
+ * @method MyQueryBuilder orWhere(Closure $subwhere)
  * @method MyQueryBuilder orWhere(array ...$condition_list)
  * 
  */
@@ -65,7 +65,7 @@ class MyQueryBuilder
     /**
      * @param Compiler $compiler
      */
-    private Compiler $compiler;
+    private $compiler = null;
 
 
     private array $columns = [];
@@ -80,7 +80,7 @@ class MyQueryBuilder
 
     private array $orders = [];
 
-    private int $limit;
+    private array $limit = [];
 
 
     /**
@@ -97,8 +97,11 @@ class MyQueryBuilder
         'not similar to', 'not ilike', '~~*', '!~~*',
     ];
 
-
-    public function __construct(array|\PDO $con)
+    /**
+     * @param array|\PDO $con
+     * 
+     */
+    public function __construct($con)
     {
         if ($con instanceof \PDO) {
             $this->connection = $con;
@@ -110,7 +113,7 @@ class MyQueryBuilder
 
     public function __get($name)
     {
-        if ( isset($this->available[$name]) ) {
+        if ( in_array($name, $this->available) ) {
             return $this->$name;
         }
     }
@@ -125,10 +128,10 @@ class MyQueryBuilder
             //     return $this->whereNested($arguments[0], $arguments[3]);
             // }
             if ( is_string($arguments[0]) ) {
-                return call_user_func([$this => 'where'], $arguments);
+                return $this->where(...$arguments);
             }
             if ( is_array($arguments[0]) ) {
-                return call_user_func([$this => 'whereConditions'], $arguments);
+                return $this->whereConditions(...$arguments);
             }
 
         }
@@ -141,20 +144,22 @@ class MyQueryBuilder
 
     public function execute()
     {
-        $qeury = $this->compiler->toSql($this);
-
-        $stmt = $this->connection->prepare($this->query);
-
+        $query = $this->compiler->toSql($this);
+        // dd($query);
+        // dd($this->params);
+        $stmt = $this->connection->prepare($query);
+        
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
 
         $stmt->execute($this->params);
 
         $this->params = [];
+        $this->compiler = null;
 
         return $stmt->fetchAll();
     }
 
-    public function select(...$fields = ['*'])
+    public function select($fields = ['*'])
     {
         if ($this->compiler) {
             throw new BuilderException('This query already have ' . get_class($this->compiler));
@@ -183,20 +188,11 @@ class MyQueryBuilder
 
         $this->compiler = new CompilerInsert();
 
-        $tmp = [];
+        $this->params = array_values($params);
 
-        foreach ($params as $key => $val) {
-            $tmp[':' . $key] = $val;
-        }
+        $this->table = $table;
 
-        $this->params = $params;
-
-        $insert = ' INSERT INTO ' . $table;
-
-        $fields = implode(', ', array_keys($params));
-        $values = implode(', ', array_keys($tmp));
-
-        $this->query .= ' INSERT INTO ' . $table . '(' . $fields . ')' . ' VALUES(' . $values . ')';
+        $this->columns = array_keys($params);
         
         return $this;
     }
@@ -209,11 +205,11 @@ class MyQueryBuilder
 
         $this->compiler = new CompilerUpdate();
 
-        $set_section = makePlaceholders($params);
-
-        $this->params = array_merge($this->params, $params);
-
         $this->table = $table;
+
+        $this->params = array_values($params);
+
+        $this->columns = array_keys($params);
 
         return $this;
     }
@@ -236,11 +232,6 @@ class MyQueryBuilder
         return $this;
     }
 
-    public function getWheres()
-    {
-        return $this->wheres;
-    }
-
     public function getParams()
     {
         return $this->params;
@@ -254,7 +245,7 @@ class MyQueryBuilder
      * @param string $boolean = 'AND'|'OR'
      * @return $this
      */
-    public function where(string $col, string $operator = null, string|int $val = null, string $boolean = 'AND')
+    private function where(string $col, string $operator = null, $val = null, string $boolean = 'AND')
     {
         if ( $col instanceof Closure ) {
             return $this->whereNested($col, $boolean);
@@ -283,7 +274,7 @@ class MyQueryBuilder
      * 
      * @return $this
      */
-    public function whereConditions(array ...$condition_list)
+    private function whereConditions(array ...$condition_list)
     {
         foreach ($condition_list as $val) {
             $this->where($val[0], $val[1], $val[2], isset($val[3]) ? $val[3] : 'AND');
@@ -299,11 +290,11 @@ class MyQueryBuilder
      * 
      * @return $this
      */
-    public function whereNested(Closure $callback, string $boolean = 'AND')
+    private function whereNested(Closure $callback, string $boolean = 'AND')
     {
         $whereNested = call_user_func($callback, new static($this->connection) );
 
-        $this->wheres[] = $whereNested->getWheres();
+        $this->wheres[] = $whereNested->wheres;
 
         $this->params = array_merge($this->params, $whereNested->params);
 
@@ -501,11 +492,11 @@ class MyQueryBuilder
     {
         $order = strtoupper($order);
 
-        if ($order != 'ASC' || $order != 'DESC') {
+        if ($order != 'ASC' && $order != 'DESC') {
             throw new BuilderException('unvalid parameter $order');
         }
 
-        $this->orderBy[] = ['column' => $column, 'order' => $order];
+        $this->orders[] = ['column' => $column, 'order' => $order];
 
         return $this;
     }
@@ -517,6 +508,9 @@ class MyQueryBuilder
     public function limit(int $num, int $start = 0)
     {
         $this->limit = [$start, $num];
+
+        $this->params[] = $start;
+        $this->params[] = $num;
 
         return $this;
     }

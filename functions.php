@@ -12,13 +12,15 @@ function dd($output) {
  * 
  * @param array $arr
  */
-function makeString(array $arr)
+function makePlaceholders(array $arr)
 {
-    $block = '';
-    $i = 1;
-    $arr_elements_num = count($arr);
+    return implode(', ', array_map(function(){ return '?'; }, $arr));
 
-    foreach ($arr as $val) {
-        $block .= '?' . ($i <= $arr_elements_num) ? ', ' : ' ';
-    }
+    // $block = '';
+    // $i = 1;
+    // $arr_elements_num = count($arr);
+
+    // foreach ($arr as $val) {
+    //     $block .= '?' . ($i <= $arr_elements_num) ? ', ' : ' ';
+    // }
 }

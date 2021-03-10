@@ -3,7 +3,7 @@
 
 require_once 'functions.php';
 $config = require_once 'config.php';
-use Builders\MyQueryBuilder;
+use DB\MyQueryBuilder;
 
 spl_autoload_register(function($classname){
 
@@ -25,7 +25,8 @@ $db = new MyQueryBuilder($config);
 $db
     ->select(['*'])
     ->from('cards')
-    
+;
+
 
 
 // $db->select(['user_id', 'title'])->from('cards')->orderBy('user_id');

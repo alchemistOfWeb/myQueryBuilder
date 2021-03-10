@@ -1,9 +1,15 @@
 <?php
 
-namespace Builders;
+namespace DB;
 
 use Closure;
-use DB\Connection;
+use DB\Compilers\Compiler;
+use DB\Compilers\CompilerDelete;
+use DB\Compilers\CompilerInsert;
+use DB\Compilers\CompilerSelect;
+use DB\Compilers\CompilerUpdate;
+use DB\Exceptions\BuilderException;
+use Exception;
 
 /**
  * 
@@ -21,32 +27,24 @@ class MyQueryBuilder
     const ASC_ORDER = 'ASC';
     const DESC_ORDER = 'DESC';
 
-    const QUERY_SELECT = 'select';
-    const QUERY_DELETE = 'delete';
-    const QUERY_UPDATE = 'update';
-    const QUERY_INSERT = 'insert';
-
-    /**
-     * @param string $query
-     */
-    private string $query = '';
-
     /**
      * @param array $params
      */
     private array $params = [];
 
     /**
-     * @param array $parts
+     * These are the variables which can be gotten but cannot be changed
+     * @param array $available
      */
-    private $parts = [
-        'columns'   => [],
-        'from'      => '',
-        'joins'     => [],
-        'wheres'    => [],
-        'groups'    => [],
-        'orders'    => [],
-        'limit'     => null,
+    private $available = [
+        'columns',
+        'table',
+        'joins',
+        'wheres',
+        'groups',
+        'orders',
+        'limit',
+        'params',
     ];
 
     /**
@@ -60,17 +58,19 @@ class MyQueryBuilder
     private string $call_type;
     
     /**
-     * @param $connection
+     * @param \PDO $connection
      */
     private $connection;
 
-
-    private $grammar;
+    /**
+     * @param Compiler $compiler
+     */
+    private Compiler $compiler;
 
 
     private array $columns = [];
     
-    private string $from = '';
+    private string $table = '';
 
     private array $joins = [];
     
@@ -108,21 +108,19 @@ class MyQueryBuilder
 
     }
 
+    public function __get($name)
+    {
+        if ( isset($this->available[$name]) ) {
+            return $this->$name;
+        }
+    }
+
     /**
      * 
      */
     public function __call($name, $arguments)
     {
-        // if ( ( ($this->call_type & static::QUERY_WHEN) == true ) && $name != 'when') {
-        //     $this->call_type ^=  static::QUERY_WHEN;
-        //     $this->query .= ' END';
-        // } elseif ($name == 'when') {
-        //     $this->call_type ^= static::QUERY_WHEN;
-        // }
-
-        $is_where = ($name == 'where');
-
-        if ($is_where) {
+        if ($name == 'where') {
             // if ( $arguments[0] instanceof Closure ) {
             //     return $this->whereNested($arguments[0], $arguments[3]);
             // }
@@ -141,43 +139,30 @@ class MyQueryBuilder
         return $this->query;
     }
 
-    private function build(array $parts) 
-    {
-        foreach($parts as $part) {
-            ($part . 'Builder')::build($part);
-        }
-    }
-
     public function execute()
     {
-        ///
-        $qeury = $this->builder->build($this->parts);
-        ///
+        $qeury = $this->compiler->toSql($this);
 
         $stmt = $this->connection->prepare($this->query);
+
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
+
         $stmt->execute($this->params);
 
-        $this->query = '';
         $this->params = [];
 
         return $stmt->fetchAll();
-
-        // if ($this->query_type === static::QUERY_INSERT) {
-        // }
-
-        // if ($this->query_type === static::QUERY_SELECT) {
-        //     return $stmt->fetchAll();
-        // }
     }
 
     public function select(...$fields = ['*'])
     {
-        // $this-> query_type = static::QUERY_SELECT;
+        if ($this->compiler) {
+            throw new BuilderException('This query already have ' . get_class($this->compiler));
+        }
+
+        $this->compiler = new CompilerSelect();
 
         $fields = is_array($fields) ? $fields : func_get_args();
-
-        // $this->query .= ' SELECT ' . implode(', ', $fields);
 
         foreach($fields as $alias => $field) {
             if ( is_string($alias) ) {
@@ -192,7 +177,12 @@ class MyQueryBuilder
 
     public function insertInto(string $table, array $params)
     {
-        // $this->query_type = static::QUERY_INSERT;
+        if ($this->compiler) {
+            throw new BuilderException('This builder already have compiler ' . get_class($this->compiler));
+        }
+
+        $this->compiler = new CompilerInsert();
+
         $tmp = [];
 
         foreach ($params as $key => $val) {
@@ -213,28 +203,35 @@ class MyQueryBuilder
 
     public function update($table, $params)
     {
-        // $this->query_type = static::QUERY_UPDATE;
+        if ($this->compiler) {
+            throw new BuilderException('This builder already have compiler ' . get_class($this->compiler));
+        }
 
-        $set_section = implode(', ', array_map( function () { return '?'; }, $params ) );
+        $this->compiler = new CompilerUpdate();
+
+        $set_section = makePlaceholders($params);
 
         $this->params = array_merge($this->params, $params);
 
-        $this->query = 'UPDATE ' . $table . ' SET ' .  $set_section;
+        $this->table = $table;
 
         return $this;
     }
 
     public function delete()
     {
-        $this->query .= ' DELETE';
+        if ($this->compiler) {
+            throw new BuilderException('This builder already have compiler ' . get_class($this->compiler));
+        }
+
+        $this->compiler = new CompilerDelete();
+
         return $this;
     }
 
     public function from(string $table)
     {
-        // $this->query .= ' FROM ' . $table;
-
-        $this->from = $table;
+        $this->table = $table;
 
         return $this;
     }
@@ -253,7 +250,7 @@ class MyQueryBuilder
      * @ignore
      * @param string $col
      * @param string $operator
-     * @param string|integer $second
+     * @param string|int $second
      * @param string $boolean = 'AND'|'OR'
      * @return $this
      */
@@ -263,7 +260,7 @@ class MyQueryBuilder
             return $this->whereNested($col, $boolean);
         }
 
-        $this->bindings['where'][] = $val;
+        $this->params[] = $val;
 
         $this->wheres[] = [$col, $operator, $val, $boolean];
 
@@ -271,9 +268,11 @@ class MyQueryBuilder
     }
 
     /**
-     * @ignore
+     * @param string $col
+     * @param string $operator
+     * @param $val
      */
-    public function orWhere($col, $operator, $val) 
+    public function orWhere(string $col, string $operator, $val) 
     {
         return $this->where($col, $operator, $val, 'OR');
     }
@@ -296,7 +295,7 @@ class MyQueryBuilder
     /**
      * overloaded where method
      * @param Closure $whereNested
-     * @param string $boolean
+     * @param string $boolean = AND (AND|OR)
      * 
      * @return $this
      */
@@ -306,50 +305,67 @@ class MyQueryBuilder
 
         $this->wheres[] = $whereNested->getWheres();
 
-        $this->params = array_merge($this->params, $whereNested->getParams());
+        $this->params = array_merge($this->params, $whereNested->params);
 
         return $this;
     }
 
+    /**
+     * @param string $col
+     * @param array $values
+     * @param string $boolean = 'and'
+     * @param bool $not = false
+     */
     public function whereIn(string $col, array $values, string $boolean = 'and', bool $not = false)
     {
-        // $this->query_type &= static::QUERY_WHERE;
-
-        // $inBlock = implode(', ', array_map( function () { return '?'; }, $params ) );
-
-        // $this->query .= ' WHERE ' . $col . ' IN (' . $inBlock . ')';
-
-        // $this->params = array_merge($this->params, $params);
-
         $operator = $not ? 'NOT IN' : 'IN';
 
-        $this->bindings['where'] = array_merge($this->bindings, $values);
+        $this->params = array_merge($this->params, $values);
 
         $this->wheres[] = [$col, $operator, $values, $boolean];
 
         return $this;
     }
 
+    /**
+     * @param string $col
+     * @param array $values
+     */
     public function whereNotIn(string $col, array $values)
     {
-        return $this->whereIn($col, $values, 'and', true);
+        return $this->whereIn($col, $values, 'AND', true);
     }
 
+    /**
+     * @param string $col
+     * @param array $values
+     */
     public function orWhereIn(string $col, array $values)
     {
-        return $this->whereIn($col, $values, 'or');
+        return $this->whereIn($col, $values, 'OR');
     }
 
+    /**
+     * @param string $col
+     * @param array $values
+     */
     public function orWhereNotIn(string $col, array $values)
     {
-        return $this->whereIn($col, $values, 'or', true);
+        return $this->whereIn($col, $values, 'OR', true);
     }
 
+    /**
+     * @param string $col
+     * @param int $first 
+     * @param int $second
+     * @param string $boolean = 'AND'
+     * @param bool $not = false
+     */
     public function whereBetween(string $col, int $first, int $second, string $boolean = 'AND', bool $not = false)
     {
         $values = array($first, $second);
 
-        $this->bindings['where'] = array_merge( $this->bindings['where'], $values );
+        $this->params = array_merge( $this->params, $values );
 
         $operator = $not ? 'NOT BETWEEN' : 'BETWEEN';
 
@@ -358,79 +374,150 @@ class MyQueryBuilder
         return $this;
     }
 
+    /**
+     * @param string $col
+     * @param int $first 
+     * @param int $second
+     */
     public function whereNotBetween(string $col, int $first, int $second)
     {
         return $this->whereBetween($col, $first, $second, 'AND', true);
     }
 
+    /**
+     * @param string $col
+     * @param int $first 
+     * @param int $second
+     */
     public function orWhereBetween(string $col, int $first, int $second)
     {
         return $this->whereBetween($col, $first, $second, 'OR');
     }
 
+    /**
+     * @param string $col
+     * @param int $first 
+     * @param int $second
+     */
     public function orWhereNotBetween(string $col, int $first, int $second)
     {
         return $this->whereBetween($col, $first, $second, 'OR', true);
     }
 
+    /**
+     * @param string $raw
+     * @param array $params
+     * 
+     * use '?' for placeholdering
+     */
     public function whereRaw(string $raw, array $params)
     {
-        $this->query .= ' WHERE ' . $raw;
-
+        /**
+         * @todo to do it completely
+         */
         $this->params = array_merge( $this->params, $params );
 
         return $this;
     }
 
-    public function innerJoin($table, $other_table)
+    /**
+     * @param string $table
+     */
+    public function innerJoin(string $table)
     {
-        $this->query .= $table . ' INNER JOIN ' . $other_table;
+        $this->joins[] = ['table' => $table, 'type' => 'INNER'];
 
         return $this;
     }
 
-    public function leftJoin($table, $other_table)
+    /**
+     * @param string $table
+     */
+    public function leftJoin(string $table)
     {
-        $this->qeury .= $table . ' LEFT JOIN ' . $other_table;
+        $this->joins[] = ['table' => $table, 'type' => 'LEFT'];
 
         return $this;
     }
 
-    public function rightJoin($table, $other_table)
+    /**
+     * @param string $table
+     */
+    public function rightJoin(string $table)
     {
-        $this->qeury .= $table . ' RIGHT JOIN ' . $other_table;
+        $this->joins[] = ['table' => $table, 'type' => 'RIGHT'];
 
         return $this;
     }
 
-    public function on(string $first, string $operator, string $second)
+    /**
+     * @param string $first
+     * @param string $operator = null
+     * @param string $second = null
+     * @param string $boolean = AND
+     */
+    public function on($first, string $operator = null, string $second = null, string $boolean = 'AND')
     {
-        $this->query .= ' ON ' . $first . ' ' . $operator . ' ' . $second;
+        if ($first instanceof Closure) {
+            return $this->onNested($first, $boolean);
+        }
+
+        $this->joins[count($this->joins) - 1]['on'][] = [$first, $operator, $second, $boolean];
 
         return $this;
     }
 
-    public function orderBy(string $field, $type = MyQueryBuilder::ASC_ORDER)
+    /**
+     * @todo
+     */
+    // public function onNested(Closure $callback, string $boolean = 'AND')
+    // {
+    //     $onNested = call_user_func($callback, new static($this->connection) );
+
+    //     $this->joins[count($this->joins) - 1]['on'][] = $onNested->joins;
+
+    //     $this->params = array_merge($this->params, $whereNested->params);
+
+    //     return $this;
+    // }
+
+    /**
+     * @param string $first
+     * @param string $operator = null
+     * @param string $second = null
+     */
+    public function orOn($first, string $operator = null, string $second = null)
     {
-        $this->query .= ' ORDER BY ' . $field . ' ' . $type;
+        $this->on($first, $operator, $second, 'OR');
 
         return $this;
     }
 
-    public function limit($num, $start = 0)
+    /**
+     * @param string $column
+     * @param string $order = ASC (ASC|DESC)
+     */
+    public function orderBy(string $column, $order = 'ASC')
     {
-        $this->query .= ' LIMIT ' . $start . ', ' . $num;
+        $order = strtoupper($order);
+
+        if ($order != 'ASC' || $order != 'DESC') {
+            throw new BuilderException('unvalid parameter $order');
+        }
+
+        $this->orderBy[] = ['column' => $column, 'order' => $order];
 
         return $this;
     }
 
-    public function when(string $condition, callable $then)
+    /**
+     * @param int $num
+     * @param int $start = 0
+     */
+    public function limit(int $num, int $start = 0)
     {
-        $when_section = $condition;
+        $this->limit = [$start, $num];
 
-        $this->query .= ' WHEN ' . $when_section . ' ';
-        call_user_func($then, $this);
-
-        $this->call_type = static::QUERY_WHEN;
+        return $this;
     }
 }

@@ -33,11 +33,13 @@ QueryBuilder (ООП без использования framework)
 Например:
 
 `
-$db = new MyQueryBuilder($config);
 
-$db->select($columns)->from($table)->where($a,'>',1)->limit(1);
+    $db = new MyQueryBuilder($config);
 
-$db->execute();
+    $db->select($columns)->from($table)->where($a,'>',1)->limit(1);
+
+    $db->execute();
+
 `
 
 При создании экземпляра класса создается подключение, при вызове цепочки методов внутри объекта ведется генерация запроса, при вызове execute запрос отправляется на сервер и непосредственно выполняется.
@@ -53,8 +55,8 @@ $db->execute();
 Чтобы начать работу с QueryBuilder вам нужно передать ему массив со следуюющим содержанием:
 
 `
-[
 
+[
     'DB_DRIVER'       => 'mysql'|'psql'|'oci'|'sqlite',
 
     'DB_HOST'       => '127.0.0.1', 
@@ -69,22 +71,41 @@ $db->execute();
     
     'DB_CHARSET'    => 'utf8',
 ]
+
 `
+
+или если вы используете sqlite
+
+<   
+    [
+        'DB_DRIVER' => 'sqlite',
+
+        'DB_PATH' => '',
+    ];
+>
 
 Вот код создания нового объекта Запросопостроителя
 
-`
+< 
+    $db = new MyQueryBuilder($config); 
+>
 
-    $db = new MyQueryBuilder($config);
 
-`
+
+
 Для того чтобы выполнить подготовленный запрос и получить результаты используйте следующую конструкцию:
 
-`
-
+<
     $result = $db->execute();
+>
 
-`
+#### Поддерживаемые базы данных:
+mysql
+pgsql
+mssql
+sybase
+sqlite
+oci (oracle)
 
 ## SELECT
 <a name="select"></a> 
@@ -96,6 +117,7 @@ $db->execute();
     $db->select()->from('table')
 
 `
+
 Или эту
 
 `
@@ -103,6 +125,7 @@ $db->execute();
     $db->select(['*'])->from('table')
 
 `
+
 Чтобы получить определённые поля:
 
 `
@@ -110,6 +133,7 @@ $db->execute();
     $db->select(['field1', 'field2'])
 
 `
+
 Поля с псевдонимами ('user.name' as 'user_name')
 
 `
@@ -122,12 +146,13 @@ $db->execute();
 <a name="orderBy"></a> 
 
 Сортировка выборки:
+
 `
 
     $db
         ->select()
         ->from('cars')
-        ->orderBy('name', 'DESC') // 'ASC' по умолчанию
+        ->orderBy('name', 'DESC'); // 'ASC' по умолчанию
 
 `
 
@@ -140,7 +165,7 @@ $db->execute();
     $db
         ->select()
         ->from('table')
-        ->limit(3) // получить 3 записи начиная с 0
+        ->limit(3); // получить 3 записи начиная с 0
 
 
 или 
@@ -149,7 +174,7 @@ $db->execute();
     $db
         ->select()
         ->from('table')
-        ->limit(3, 5) // Получить 3 записи начиная с 5
+        ->limit(3, 5); // Получить 3 записи начиная с 5
 
 
 ## WHERE
@@ -157,9 +182,9 @@ $db->execute();
 
 Пример:
 
-
+<
     $db->select()->from('users')->where('id', '=', 4);
-
+>
 
 
 Каждой следующей условной конструкии созданной с помощью метода where будет добавлен оператор AND
@@ -202,7 +227,7 @@ $db->execute();
 
     $db
         ->update('posts', ['title' =>'new title', 'description' => 'new description])
-        ->where
+        ->where('posts.id', '=', 89);
 
 
 ## INSERT
@@ -212,7 +237,7 @@ insertInto и limit - единственные методы пригодные �
 
 
     $db
-        ->insertInto('posts', ['title' =>'title', 'description' => 'description])
+        ->insertInto('posts', ['title' =>'title', 'description' => 'description]);
 
 
 
@@ -224,7 +249,7 @@ insertInto и limit - единственные методы пригодные �
     $db
         ->delete()
         ->from('posts')
-        ->where('id', '=', 16)
+        ->where('id', '=', 16);
 
 
 
@@ -242,7 +267,7 @@ insertInto и limit - единственные методы пригодные �
         ->innerJoin('contacts')
         ->on('users.id', '=', 'contacts.user_id')
         ->innerJoin('orders')
-        ->on('users.id', '=', 'orders.user_id')
+        ->on('users.id', '=', 'orders.user_id');
 
 
 
@@ -254,7 +279,7 @@ insertInto и limit - единственные методы пригодные �
         ->select()
         ->from(users)
         ->leftJoin('posts')
-        ->on('users.id', '=', 'posts.user_id')
+        ->on('users.id', '=', 'posts.user_id');
 
 
 
@@ -262,7 +287,7 @@ insertInto и limit - единственные методы пригодные �
         ->select()
         ->from(users)
         ->rightJoin('posts')
-        ->on('users.id', '=', 'posts.user_id')
+        ->on('users.id', '=', 'posts.user_id');
         
 
 
@@ -272,7 +297,7 @@ insertInto и limit - единственные методы пригодные �
 <a name="mtm"></a> 
 
 
-
+<
     $db
         ->select(['post_name' => 'posts.name'])
         ->from('posts')
@@ -280,5 +305,5 @@ insertInto и limit - единственные методы пригодные �
         ->on('posts.id', '=', 'posts_categories.post_id')
         ->innerJoin('categories')
         ->on('categories.id', '=', 'posts_categories.category_id')
-        ->where('posts.slug', '=', 'super-post')
-
+        ->where('posts.slug', '=', 'super-post');
+>

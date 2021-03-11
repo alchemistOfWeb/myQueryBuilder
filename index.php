@@ -1,6 +1,5 @@
 <?php
 
-
 require_once 'functions.php';
 $config = require_once 'config.php';
 use DB\MyQueryBuilder;
@@ -11,8 +10,6 @@ spl_autoload_register(function($classname){
         $classname = str_replace('\\', '/', $classname);
     }
 
-    // dd($classname);
-
     $file = $classname . '.php';
 
     require_once $file;
@@ -22,13 +19,15 @@ spl_autoload_register(function($classname){
 
 $db = new MyQueryBuilder($config);
 
-$db
-    ->select(['*'])
-    ->from('admins')
-    ->where(
-        ['name', 'like', 'd%'],
-        ['name', 'like', 'h%', 'or']
-    )
+$db 
+    ->insertInto('cards', ['user_id' => 1, 'title' => 'test', 'd' => 'd']);
+// $db
+//     ->select(['*'])
+//     ->from('admins')
+//     ->where(
+//         ['name', 'like', 'd%'],
+//         ['name', 'like', 'h%', 'or']
+//     )
 //     ->orWhere('name', 'like', 'h%')
 //     ->orderBy('name')
     // ->limit(3)

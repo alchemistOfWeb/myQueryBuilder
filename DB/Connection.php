@@ -6,7 +6,18 @@ class Connection
 {
     static function connect($config) 
     {
-        $dsn = $config['DB_DRIVER'] . ":host=" . $config['DB_HOST'] . ";dbname=" . $config['DB_NAME'] . ";charset=" . $config['DB_CHARSET'];
+        if ( $config['DB_DRIVER'] == 'sqlite' ) {
+
+            $dsn = "sqlite:" . $config['DB_PATH'];
+
+            if ( !filesize($config['DB_PATH']) ) {
+                throw new \Exception('There are no tables in the database!');
+            }
+
+        } else {
+            $dsn = $config['DB_DRIVER'] . ":host=" . $config['DB_HOST'] . ";dbname=" . $config['DB_NAME'];
+            
+        }
 
         $opt = [
             \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,

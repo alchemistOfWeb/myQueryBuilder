@@ -153,10 +153,16 @@ class MyQueryBuilder
 
         $stmt->execute($this->params);
 
+        if ($this->compiler instanceof CompilerSelect) {
+            $results = $stmt->fetchAll();
+        } else {
+            $results = (bool)$stmt;
+        }
+
         $this->params = [];
         $this->compiler = null;
 
-        return $stmt->fetchAll();
+        return $results;
     }
 
     public function select($fields = ['*'])

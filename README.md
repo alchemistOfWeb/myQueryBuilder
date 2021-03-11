@@ -136,55 +136,55 @@ $db->execute();
 
 Вы также можете ограничить выборку или другой тип запроса следующим образом:
 
-`
+
     $db
         ->select()
         ->from('table')
         ->limit(3) // получить 3 записи начиная с 0
-`
+
 
 или 
 
-`
+
     $db
         ->select()
         ->from('table')
         ->limit(3, 5) // Получить 3 записи начиная с 5
-`
+
 
 ## WHERE
 <a name="where"></a> 
 
 Пример:
 
-`
+
     $db->select()->from('users')->where('id', '=', 4);
-`
+
 
 
 Каждой следующей условной конструкии созданной с помощью метода where будет добавлен оператор AND
 Чтобы добавить OR используйте метод orWhere
 
-`
+
     $db
         ->select()
         ->from('cars')
         ->where('speed', '>', 90)
         ->where('mass', '<', '80');
-`
+
 
 Составлять запросы можно и так:
 
-`
+
     $db
         ->select()
         ->from('cars')
         ->where(['speed', '>', 90], ['mass', '<', '80', 'or']);
-`
+
 
 Если вы хотите разместить ваше условие в скобках используйте callback
 
-`
+
     $db
         ->select()
         ->from('posts')
@@ -194,32 +194,32 @@ $db->execute();
             ->where('subscribers', '>', 3)
             ->where('title', 'like', 'M%');
         });
-`
+
 
 ## UPDATE
 <a name="update"></a> 
 
-`
+
     $db
         ->update('posts', ['title' =>'new title', 'description' => 'new description])
         ->where
-`
+
 
 ## INSERT
 <a name="insert"></a> 
 insertInto и limit - единственные методы пригодные для вставки
 
-`
+
 
     $db
         ->insertInto('posts', ['title' =>'title', 'description' => 'description])
 
-`
+
 
 ## DELETE
 <a name="delete"></a> 
 
-`
+
 
     $db
         ->delete()
@@ -227,7 +227,7 @@ insertInto и limit - единственные методы пригодные �
         ->where('id', '=', 16)
 
 
-`
+
 
 ## JOINS
 <a name="joins"></a> 
@@ -235,7 +235,7 @@ insertInto и limit - единственные методы пригодные �
 ### inner joins
 <a name="innerjoin"></a> 
 
-`
+
     $db
         ->select()
         ->from(users)
@@ -243,35 +243,35 @@ insertInto и limit - единственные методы пригодные �
         ->on('users.id', '=', 'contacts.user_id')
         ->innerJoin('orders')
         ->on('users.id', '=', 'orders.user_id')
-        
-`
+
+
 
 ### left/right joins
 <a name="lrjoin"></a> 
 
-`
+
     $db
         ->select()
         ->from(users)
         ->leftJoin('posts')
         ->on('users.id', '=', 'posts.user_id')
-`
 
-`
+
+
     $db
         ->select()
         ->from(users)
         ->rightJoin('posts')
         ->on('users.id', '=', 'posts.user_id')
         
-`
+
 
 
 
 ### many to many
 <a name="mtm"></a> 
 
-`
+
 
     $db
         ->select(['post_name' => 'posts.name'])
@@ -282,4 +282,3 @@ insertInto и limit - единственные методы пригодные �
         ->on('categories.id', '=', 'posts_categories.category_id')
         ->where('posts.slug', '=', 'super-post')
 
-`

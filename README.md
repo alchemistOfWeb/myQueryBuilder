@@ -53,8 +53,8 @@ $db->execute();
 Чтобы начать работу с QueryBuilder вам нужно передать ему массив со следуюющим содержанием:
 
 `
-
 [
+
     'DB_DRIVER'       => 'mysql'|'psql'|'oci'|'sqlite',
 
     'DB_HOST'       => '127.0.0.1', 
@@ -69,8 +69,6 @@ $db->execute();
     
     'DB_CHARSET'    => 'utf8',
 ]
-
-
 `
 
 Вот код создания нового объекта Запросопостроителя
@@ -137,22 +135,21 @@ $db->execute();
 <a name="limit"></a> 
 
 Вы также можете ограничить выборку или другой тип запроса следующим образом:
-`
 
+`
     $db
         ->select()
         ->from('table')
         ->limit(3) // получить 3 записи начиная с 0
-
 `
+
 или 
-`
 
+`
     $db
         ->select()
         ->from('table')
         ->limit(3, 5) // Получить 3 записи начиная с 5
-
 `
 
 ## WHERE
@@ -161,33 +158,33 @@ $db->execute();
 Пример:
 
 `
-
     $db->select()->from('users')->where('id', '=', 4);
-
 `
+
+
 Каждой следующей условной конструкии созданной с помощью метода where будет добавлен оператор AND
 Чтобы добавить OR используйте метод orWhere
-`
 
+`
     $db
         ->select()
         ->from('cars')
         ->where('speed', '>', 90)
         ->where('mass', '<', '80');
-
 `
+
 Составлять запросы можно и так:
-`
 
+`
     $db
         ->select()
         ->from('cars')
         ->where(['speed', '>', 90], ['mass', '<', '80', 'or']);
-
 `
+
 Если вы хотите разместить ваше условие в скобках используйте callback
-`
 
+`
     $db
         ->select()
         ->from('posts')
@@ -197,18 +194,15 @@ $db->execute();
             ->where('subscribers', '>', 3)
             ->where('title', 'like', 'M%');
         });
-
 `
 
 ## UPDATE
 <a name="update"></a> 
 
 `
-
     $db
         ->update('posts', ['title' =>'new title', 'description' => 'new description])
         ->where
-
 `
 
 ## INSERT

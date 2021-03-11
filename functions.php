@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * print data and die
+ */
 function dd($output) {
     echo '<pre>';
     print_r($output);
@@ -14,13 +17,5 @@ function dd($output) {
  */
 function makePlaceholders(array $arr)
 {
-    return implode(', ', array_map(function(){ return '?'; }, $arr));
-
-    // $block = '';
-    // $i = 1;
-    // $arr_elements_num = count($arr);
-
-    // foreach ($arr as $val) {
-    //     $block .= '?' . ($i <= $arr_elements_num) ? ', ' : ' ';
-    // }
+    return implode( ', ', array_map(function(){ return '?'; }, $arr) );
 }

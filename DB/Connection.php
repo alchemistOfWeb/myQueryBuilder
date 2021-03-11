@@ -14,9 +14,11 @@ class Connection
                 throw new \Exception('There are no tables in the database!');
             }
 
+            $config['DB_USER'] = null;
+            $config['DB_PASSWORD'] = null;
+
         } else {
             $dsn = $config['DB_DRIVER'] . ":host=" . $config['DB_HOST'] . ";dbname=" . $config['DB_NAME'];
-            
         }
 
         $opt = [

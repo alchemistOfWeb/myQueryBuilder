@@ -124,24 +124,28 @@ class MyQueryBuilder
     public function __call($name, $arguments)
     {
         if ($name == 'where') {
-            // if ( $arguments[0] instanceof Closure ) {
-            //     return $this->whereNested($arguments[0], $arguments[3]);
-            // }
+
             if ( is_string($arguments[0]) ) {
                 return $this->where(...$arguments);
             }
             if ( is_array($arguments[0]) ) {
                 return $this->whereConditions(...$arguments);
             }
-
+            
         }
     }
 
+    /**
+     * @return string query
+     */
     public function getQuery() 
     {
         return $this->query;
     }
 
+    /**
+     * 
+     */
     public function execute()
     {
         $query = $this->compiler->toSql($this);
@@ -165,6 +169,10 @@ class MyQueryBuilder
         return $results;
     }
 
+    /**
+     * @param $fields = ['*'] 
+     * 
+     */
     public function select($fields = ['*'])
     {
         if ($this->compiler) {
@@ -237,6 +245,7 @@ class MyQueryBuilder
 
         return $this;
     }
+
 
     public function getParams()
     {
@@ -402,22 +411,6 @@ class MyQueryBuilder
     }
 
     /**
-     * @param string $raw
-     * @param array $params
-     * 
-     * use '?' for placeholdering
-     */
-    public function whereRaw(string $raw, array $params)
-    {
-        /**
-         * @todo to do it completely
-         */
-        $this->params = array_merge( $this->params, $params );
-
-        return $this;
-    }
-
-    /**
      * @param string $table
      */
     public function innerJoin(string $table)
@@ -463,20 +456,6 @@ class MyQueryBuilder
 
         return $this;
     }
-
-    /**
-     * @todo
-     */
-    // public function onNested(Closure $callback, string $boolean = 'AND')
-    // {
-    //     $onNested = call_user_func($callback, new static($this->connection) );
-
-    //     $this->joins[count($this->joins) - 1]['on'][] = $onNested->joins;
-
-    //     $this->params = array_merge($this->params, $whereNested->params);
-
-    //     return $this;
-    // }
 
     /**
      * @param string $first

@@ -8,6 +8,9 @@ abstract class Compiler
 {
     abstract public function toSql(MyQueryBuilder $builder);
 
+    /**
+     * @param array $elements
+     */
     protected function compileJoins(array $elements)
     {
         if ( empty($elements) ) {
@@ -25,6 +28,11 @@ abstract class Compiler
         return ' ' . $sql;
     }
 
+    /**
+     * @param array $elements
+     * @param bool $on = false
+     * @param bool $ph = true - make placeholders in string if true or not if false
+     */
     protected function compileWheres(array $elements, bool $on = false, bool $ph = true)
     {
         if ( empty($elements) ) {
@@ -40,6 +48,10 @@ abstract class Compiler
         return ' ' . $sql;
     }
 
+    /**
+     * @param array $conditions
+     * @param bool $ph = true - make placeholders in string if true or not if false
+     */
     protected function compileConditions(array $conditions, bool $ph = true)
     {
         $conditions[0][3] = null;
@@ -57,6 +69,9 @@ abstract class Compiler
         }, $conditions) );
     }
 
+    /**
+     * @param array $limits
+     */
     protected function compileLimit(array $limits)
     {
         return !$limits

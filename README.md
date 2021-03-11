@@ -58,7 +58,7 @@ QueryBuilder (ООП без использования framework)
 
 [
 
-    'DB_DRIVER'       => 'mysql'|'psql'|'oci'|'sqlite',
+    'DB_DRIVER'       => 'mysql',  //|'psql'|'oci'|'sqlite'|'sybase'|'mssql'|'firebird'|anotherdriver
 
     'DB_HOST'       => '127.0.0.1', 
 

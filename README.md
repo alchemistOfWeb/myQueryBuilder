@@ -32,7 +32,7 @@ QueryBuilder (ООП без использования framework)
 
 Например:
 
-`
+```php
 
     $db = new MyQueryBuilder($config);
 
@@ -40,7 +40,7 @@ QueryBuilder (ООП без использования framework)
 
     $db->execute();
 
-`
+```
 
 При создании экземпляра класса создается подключение, при вызове цепочки методов внутри объекта ведется генерация запроса, при вызове execute запрос отправляется на сервер и непосредственно выполняется.
 
@@ -55,7 +55,7 @@ QueryBuilder (ООП без использования framework)
 Чтобы начать работу с QueryBuilder вам нужно передать ему массив со следующим содержанием:
 
 
-
+```php
 [
 
     'DB_DRIVER'       => 'mysql',  //|'psql'|'oci'|'sqlite'|'sybase'|'mssql'|'firebird'|anotherdriver
@@ -70,32 +70,32 @@ QueryBuilder (ООП без использования framework)
 
     'DB_PASSWORD'   => пароль пользователя,
 ];
-
+```
 
 
 или если вы используете sqlite
 
+```php
 [
 
     'DB_DRIVER' => 'sqlite',
 
     'DB_PATH' => '',
 ];
+```
 
 Вот код создания нового объекта Запросопостроителя
 
-
-
-    $db = new MyQueryBuilder($config);
-
+```php
+$db = new MyQueryBuilder($config);
+```
 
 
 Для того чтобы выполнить подготовленный запрос и получить результаты используйте следующую конструкцию:
 
-
-
-    $result = $db->execute();
-
+```php
+$result = $db->execute();
+```
 
 #### Поддерживаемые базы данных:
 Для подключения используется PDO, так что в теории должны работать все движки поддерживаемые данным расширением
@@ -122,35 +122,31 @@ QueryBuilder (ООП без использования framework)
 <a name="select"></a> 
 
 Чтобы получить все поля можно использовать эту конструкцию
-
-
-
-    $db->select()->from('table')
-
+```php
+$db->select()->from('table')
+```
 
 
 Или эту
-
-
-
-    $db->select(['*'])->from('table')
-
+```php
+$db->select(['*'])->from('table')
+```
 
 
 Чтобы получить определённые поля:
 
 
-
-    $db->select(['field1', 'field2'])
-
+```php
+$db->select(['field1', 'field2'])
+```
 
 
 Поля с псевдонимами ('user.name' as 'user_name')
 
 
-
-    $db->select(['user_name' => 'users.name', 'users.id'])
-
+```php
+$db->select(['user_name' => 'users.name', 'users.id'])
+```
 
 
 ### orderBy
@@ -158,13 +154,12 @@ QueryBuilder (ООП без использования framework)
 
 Сортировка выборки:
 
-
-
-    $db
-        ->select()
-        ->from('cars')
-        ->orderBy('name', 'DESC'); // 'ASC' по умолчанию
-
+```php
+$db
+    ->select()
+    ->from('cars')
+    ->orderBy('name', 'DESC'); // 'ASC' по умолчанию
+```
 
 
 ## LIMIT
@@ -172,96 +167,96 @@ QueryBuilder (ООП без использования framework)
 
 Вы также можете ограничить выборку или другой тип запроса следующим образом:
 
-
-    $db
-        ->select()
-        ->from('table')
-        ->limit(3); // получить 3 записи начиная с 0
-
+```php
+$db
+    ->select()
+    ->from('table')
+    ->limit(3); // получить 3 записи начиная с 0
+```
 
 или 
 
-
-    $db
-        ->select()
-        ->from('table')
-        ->limit(3, 5); // Получить 3 записи начиная с 5
-
+```php
+$db
+    ->select()
+    ->from('table')
+    ->limit(3, 5); // Получить 3 записи начиная с 5
+```
 
 ## WHERE
 <a name="where"></a> 
 
 Пример:
 
-
-    $db->select()->from('users')->where('id', '=', 4);
-
+```php
+$db->select()->from('users')->where('id', '=', 4);
+```
 
 
 Каждой следующей условной конструкии созданной с помощью метода where будет добавлен оператор AND
 Чтобы добавить OR используйте метод orWhere
 
-
-    $db
-        ->select()
-        ->from('cars')
-        ->where('speed', '>', 90)
-        ->where('mass', '<', '80');
-
+```php
+$db
+    ->select()
+    ->from('cars')
+    ->where('speed', '>', 90)
+    ->where('mass', '<', '80');
+```
 
 Составлять запросы можно и так:
 
-
-    $db
-        ->select()
-        ->from('cars')
-        ->where(['speed', '>', 90], ['mass', '<', '80', 'or']);
-
+```php
+$db
+    ->select()
+    ->from('cars')
+    ->where(['speed', '>', 90], ['mass', '<', '80', 'or']);
+```
 
 Если вы хотите разместить ваше условие в скобках используйте callback
 
-
-    $db
-        ->select()
-        ->from('posts')
-        ->where('likes', '>', 10)
-        ->orWhere(function($query){
-            return $query
-            ->where('subscribers', '>', 3)
-            ->where('title', 'like', 'M%');
-        });
-
+```php
+$db
+    ->select()
+    ->from('posts')
+    ->where('likes', '>', 10)
+    ->orWhere(function($query){
+        return $query
+        ->where('subscribers', '>', 3)
+        ->where('title', 'like', 'M%');
+    });
+```
 
 ## UPDATE
 <a name="update"></a> 
 
-
-    $db
-        ->update('posts', ['title' =>'new title', 'description' => 'new description])
-        ->where('posts.id', '=', 89);
-
+```php
+$db
+    ->update('posts', ['title' =>'new title', 'description' => 'new description])
+    ->where('posts.id', '=', 89);
+```
 
 ## INSERT
 <a name="insert"></a> 
 insertInto - единственный метод пригодный для вставки. т.е. после него можно только совершить запрос методом 'execute()'
 
 
-
-    $db
-        ->insertInto('posts', ['title' =>'title', 'description' => 'description]);
-
+```php
+$db
+    ->insertInto('posts', ['title' =>'title', 'description' => 'description]);
+```
 
 
 ## DELETE
 <a name="delete"></a> 
 
 
-
-    $db
-        ->delete()
-        ->from('posts')
-        ->where('id', '=', 16);
-
+```php
+$db
+    ->delete()
+    ->from('posts')
+    ->where('id', '=', 16);
+```
 
 
 
@@ -271,50 +266,48 @@ insertInto - единственный метод пригодный для вс�
 ### inner joins
 <a name="innerjoin"></a> 
 
-
-    $db
-        ->select()
-        ->from(users)
-        ->innerJoin('contacts')
-        ->on('users.id', '=', 'contacts.user_id')
-        ->innerJoin('orders')
-        ->on('users.id', '=', 'orders.user_id');
-
+```php
+$db
+    ->select()
+    ->from(users)
+    ->innerJoin('contacts')
+    ->on('users.id', '=', 'contacts.user_id')
+    ->innerJoin('orders')
+    ->on('users.id', '=', 'orders.user_id');
+```
 
 
 ### left/right joins
 <a name="lrjoin"></a> 
 
+```php
+$db
+    ->select()
+    ->from(users)
+    ->leftJoin('posts')
+    ->on('users.id', '=', 'posts.user_id');
+```
 
-    $db
-        ->select()
-        ->from(users)
-        ->leftJoin('posts')
-        ->on('users.id', '=', 'posts.user_id');
-
-
-
-    $db
-        ->select()
-        ->from(users)
-        ->rightJoin('posts')
-        ->on('users.id', '=', 'posts.user_id');
-        
-
-
+```php
+$db
+    ->select()
+    ->from(users)
+    ->rightJoin('posts')
+    ->on('users.id', '=', 'posts.user_id');
+```      
 
 
 ### many to many
 <a name="mtm"></a> 
 
 
-
-    $db
-        ->select(['post_name' => 'posts.name'])
-        ->from('posts')
-        ->innerJoin('posts_categories')
-        ->on('posts.id', '=', 'posts_categories.post_id')
-        ->innerJoin('categories')
-        ->on('categories.id', '=', 'posts_categories.category_id')
-        ->where('posts.slug', '=', 'super-post');
-
+```php
+$db
+    ->select(['post_name' => 'posts.name'])
+    ->from('posts')
+    ->innerJoin('posts_categories')
+    ->on('posts.id', '=', 'posts_categories.post_id')
+    ->innerJoin('categories')
+    ->on('categories.id', '=', 'posts_categories.category_id')
+    ->where('posts.slug', '=', 'super-post');
+```
